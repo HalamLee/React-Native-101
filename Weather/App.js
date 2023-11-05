@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
@@ -7,15 +8,45 @@ import {
   contentContainerStyle,
   Dimensions,
 } from 'react-native';
+import * as Location from 'expo-location';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function App() {
+  const [city, setCity] = useState('Loading...');
+  const [detailCityName, setDetailCityName] = useState('');
+  const [location, setLocation] = useState();
+  const [ok, setOk] = useState(true);
+  const ask = async () => {
+    const { granted } = await Location.requestForegroundPermissionsAsync();
+    if (!granted) {
+      setOk(false);
+    }
+    const {
+      coords: { latitude, longitude },
+    } = await Location.getCurrentPositionAsync({ accuracy: 5 });
+    const location = await Location.reverseGeocodeAsync(
+      {
+        latitude,
+        longitude,
+      },
+      { useGoogleMaps: false }
+    );
+    setCity(location[0].city);
+    setDetailCityName(location[0].name);
+  };
+  useEffect(() => {
+    ask();
+  }, []);
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       <View style={styles.city}>
-        <Text style={styles.cityName}>Seoul</Text>
+        <Text style={styles.cityName}>{city}</Text>
+        {city !== 'Loading...' && (
+          <Text style={styles.detailCityName}>{detailCityName}</Text>
+        )}
       </View>
       <ScrollView
         pagingEnabled
@@ -49,6 +80,12 @@ const styles = StyleSheet.create({
   cityName: {
     fontSize: 48,
     fontWeight: '600',
+    color: 'white',
+  },
+  detailCityName: {
+    marginTop: 12,
+    fontSize: 32,
+    fontWeight: 600,
     color: 'white',
   },
   weather: {},
